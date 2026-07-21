@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Simulateur — Coût de garde d'enfant à domicile</title>
+<meta name="description" content="Simulateur de coût de garde d'enfant à domicile (+ de 6 ans) : taux et volume horaire par jour, calendrier 2026/2027, charges patronales URSSAF CESU et crédit d'impôt." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#20303A; --paper:#F6F2E9; --paper2:#EFE9DC; --line:#CDC3AC;
+    --gold:#A97C1F; --muted:#7A7261; --dark-line:#3C4D57; --cream:#EDE6D3; --cream2:#C9BE9F;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);font-family:'Inter',sans-serif;color:var(--ink);}
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 20px;}
+  header{display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:32px;flex-wrap:wrap;gap:8px;}
+  .eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:0.15em;color:var(--gold);font-weight:600;}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:28px;margin:4px 0 0 0;}
+  .ref{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);text-align:right;line-height:1.5;}
+  .grid{display:grid;grid-template-columns:1fr 1.15fr;gap:32px;}
+  @media (max-width:820px){.grid{grid-template-columns:1fr;}}
+
+  h2.section{font-size:13px;text-transform:uppercase;letter-spacing:0.1em;color:var(--gold);font-weight:600;margin:28px 0 10px 0;}
+  h2.section:first-child{margin-top:0;}
+
+  table.days{width:100%;border-collapse:collapse;font-size:13px;}
+  table.days th{text-align:right;font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:0.05em;padding:4px 6px;}
+  table.days th:first-child{text-align:left;}
+  table.days td{padding:5px 6px;border-bottom:1px solid var(--line);}
+  table.days td:first-child{font-weight:500;}
+  table.days input{width:100%;text-align:right;background:transparent;border:1px solid var(--line);border-radius:4px;padding:4px 6px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink);}
+
+  .field, .toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);}
+  .field label, .toggle label{font-size:14px;}
+  .field .in{display:flex;align-items:center;gap:6px;}
+  input[type="number"], input[type="date"]{
+    background:transparent;border:1px solid var(--line);border-radius:4px;padding:5px 8px;
+    font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--ink);
+  }
+  input[type="number"]{width:80px;text-align:right;}
+  input[type="date"]{width:150px;}
+  .suffix{font-size:12px;color:var(--muted);width:34px;}
+  input[type="checkbox"]{width:16px;height:16px;accent-color:var(--gold);}
+
+  .note{font-size:12px;line-height:1.6;color:var(--muted);margin-top:12px;}
+
+  .card{background:var(--paper2);border:1px solid var(--line);border-radius:2px;padding:20px;margin-bottom:16px;}
+  .card.dark{background:var(--ink);}
+  .card-title{font-size:12px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:6px;}
+  .card.dark .card-title{color:var(--cream2);}
+
+  .line{display:flex;align-items:baseline;justify-content:space-between;padding:6px 0;font-size:14px;}
+  .line .val{font-family:'IBM Plex Mono',monospace;}
+  .line.bold{font-weight:600;}
+  .line.muted{color:var(--muted);}
+  .line.muted .val{color:var(--muted);}
+  .line.dim{opacity:0.75;}
+  .rule{border-top:1px solid var(--line);margin:8px 0;}
+  .rule.dark{border-top:1px solid var(--dark-line);}
+  .sub{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);margin-top:2px;}
+
+  .card.dark .line{color:var(--cream2);}
+  .card.dark .line .val{color:var(--cream);}
+  .credit-amount{font-family:'Fraunces',serif;font-size:26px;font-weight:600;color:var(--cream);}
+  .credit-badge{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--gold);}
+
+  .month-table-wrap{max-height:460px;overflow-y:auto;border:1px solid var(--line);border-radius:2px;}
+  table.months{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed;}
+  table.months col.col-mois{width:22%;}
+  table.months col.col-heures{width:14%;}
+  table.months col.col-net{width:28%;}
+  table.months col.col-charges{width:20%;}
+  table.months col.col-cout{width:16%;}
+  table.months thead th{position:sticky;top:0;background:var(--paper2);text-align:right;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:0.03em;color:var(--muted);border-bottom:1px solid var(--line);}
+  table.months thead th:first-child{text-align:left;}
+  table.months td{padding:6px 10px;text-align:right;font-family:'IBM Plex Mono',monospace;border-bottom:1px solid var(--line);}
+  table.months td:first-child{text-align:left;font-family:'Inter',sans-serif;}
+  table.months tbody tr:last-child td{border-bottom:none;}
+  table.months tfoot td{padding:8px 10px;text-align:right;font-weight:600;font-family:'IBM Plex Mono',monospace;border-top:1px solid var(--ink);}
+  table.months tfoot td:first-child{text-align:left;font-family:'Inter',sans-serif;}
+
+  .year-block{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--dark-line);}
+  .year-block:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+  .year-label{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--gold);margin-bottom:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Simulation · Garde d'enfant à domicile (+ de 6 ans)</div>
+      <h1>Bulletin de simulation</h1>
+    </div>
+    <div class="ref">CESU déclaratif · Calendrier 2026/2027<br/>Taux URSSAF au 01/01/2026<br/>
+      <a href="#" onclick="resetState();return false;" style="color:var(--gold);">Réinitialiser les données</a>
+    </div>
+  </header>
+  <p class="note" style="margin:-24px 0 24px 0;">Vos saisies sont conservées automatiquement dans ce navigateur (stockage local) — rien n'est envoyé ni partagé.</p>
+
+  <div class="grid">
+    <!-- LEFT: inputs -->
+    <div>
+      <h2 class="section">Durée du contrat</h2>
+      <div class="field">
+        <label for="dateDebut">Date de début</label>
+        <input type="date" id="dateDebut" value="2026-09-01" min="2026-01-01" max="2027-12-31">
+      </div>
+      <div class="field">
+        <label for="dateFin">Date de fin</label>
+        <input type="date" id="dateFin" value="2027-07-03" min="2026-01-01" max="2027-12-31">
+      </div>
+
+      <h2 class="section">Volume horaire &amp; taux net par jour</h2>
+      <table class="days">
+        <thead><tr><th>Jour</th><th>Heures / jour</th><th>Taux €/h</th></tr></thead>
+        <tbody>
+          <tr><td>Lundi</td><td><input type="number" id="h0" value="3" min="0" step="0.25"></td><td><input type="number" id="t0" value="12" min="0" step="0.5"></td></tr>
+          <tr><td>Mardi</td><td><input type="number" id="h1" value="3" min="0" step="0.25"></td><td><input type="number" id="t1" value="12" min="0" step="0.5"></td></tr>
+          <tr><td>Mercredi</td><td><input type="number" id="h2" value="8" min="0" step="0.25"></td><td><input type="number" id="t2" value="12" min="0" step="0.5"></td></tr>
+          <tr><td>Jeudi</td><td><input type="number" id="h3" value="3" min="0" step="0.25"></td><td><input type="number" id="t3" value="12" min="0" step="0.5"></td></tr>
+          <tr><td>Vendredi</td><td><input type="number" id="h4" value="3" min="0" step="0.25"></td><td><input type="number" id="t4" value="12" min="0" step="0.5"></td></tr>
+          <tr><td>Samedi</td><td><input type="number" id="h5" value="0" min="0" step="0.25"></td><td><input type="number" id="t5" value="14" min="0" step="0.5"></td></tr>
+          <tr><td>Dimanche</td><td><input type="number" id="h6" value="0" min="0" step="0.25"></td><td><input type="number" id="t6" value="17" min="0" step="0.5"></td></tr>
+        </tbody>
+      </table>
+
+      <h2 class="section">Jours fériés</h2>
+      <div class="toggle">
+        <label for="travailleFeries">Enfant gardé si le jour férié tombe un jour habituel de garde</label>
+        <input type="checkbox" id="travailleFeries">
+      </div>
+      <div class="field">
+        <label for="tFerie">Taux net jour férié (si gardé)</label>
+        <div class="in"><input type="number" id="tFerie" value="17" min="0" step="0.5"><span class="suffix">€/h</span></div>
+      </div>
+      <p class="note">Un jour férié non gardé n'est ni compté ni payé.</p>
+
+      <h2 class="section">Vacances scolaires</h2>
+      <div class="toggle">
+        <label for="applyVacances">Aucune garde pendant les vacances scolaires (Toussaint, Noël, hiver, printemps, été)</label>
+        <input type="checkbox" id="applyVacances" checked>
+      </div>
+      <div class="field">
+        <label for="zoneScolaire">Zone scolaire (vacances d'hiver / printemps)</label>
+        <select id="zoneScolaire" style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:4px;padding:5px 8px;">
+          <option value="A">Zone A</option>
+          <option value="B">Zone B</option>
+          <option value="C" selected>Zone C</option>
+        </select>
+      </div>
+      <p class="note">Toussaint, Noël et grandes vacances sont communes aux 3 zones. Vacances d'été 2027 estimées jusqu'au 31 août (date de rentrée 2027 pas encore publiée).</p>
+
+      <h2 class="section">Paramètres</h2>
+      <div class="toggle">
+        <label for="cpInclus">Congés payés déjà inclus dans les taux</label>
+        <input type="checkbox" id="cpInclus" checked>
+      </div>
+      <div class="toggle">
+        <label for="alsaceMoselle">Salarié en Alsace-Moselle (cotis. salariale maladie +1,30%)</label>
+        <input type="checkbox" id="alsaceMoselle">
+      </div>
+      <div class="field">
+        <label for="enfants">Enfants à charge du foyer</label>
+        <div class="in"><input type="number" id="enfants" value="1" min="0" step="1"></div>
+      </div>
+      <div class="toggle">
+        <label for="premiereAnnee">1ère année d'emploi à domicile (+1 500 € de plafond, 1ère année civile du contrat)</label>
+        <input type="checkbox" id="premiereAnnee">
+      </div>
+
+      <p class="note">
+        Le calcul jour par jour s'appuie sur les 11 jours fériés légaux 2026 et 2027 (métropole). Cotisations patronales : barème URSSAF CESU « emplois familiaux » — 44,696% du brut + 5 € (plafonné à 47,396% du brut), moins l'abattement forfaitaire de 2 €/heure effectuée. Cotisations salariales : 21,88025% du brut (23,18025% en Alsace-Moselle). Le plafond du crédit d'impôt s'applique par année civile.
+      </p>
+    </div>
+
+    <!-- RIGHT: results -->
+    <div>
+      <div class="card">
+        <div class="card-title">Détail mensuel</div>
+        <div class="month-table-wrap">
+          <table class="months">
+            <colgroup>
+              <col class="col-mois"><col class="col-heures"><col class="col-net"><col class="col-charges"><col class="col-cout">
+            </colgroup>
+            <thead><tr><th>Mois</th><th>Heures</th><th>Salaire net</th><th>Charges (sal.+patr.)</th><th>Coût total</th></tr></thead>
+            <tbody id="monthsBody"></tbody>
+            <tfoot><tr><td>Total période</td><td id="totHeures">–</td><td id="totNet">–</td><td id="totCharges">–</td><td id="totCout">–</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Crédit d'impôt par année civile</div>
+        <div id="yearsBlock"></div>
+      </div>
+
+      <div class="card dark">
+        <div class="card-title">Bilan sur la durée du contrat</div>
+        <div class="line" style="align-items:baseline;">
+          <span class="credit-amount" id="outCreditTotal">–</span>
+          <span class="credit-badge">crédit d'impôt cumulé</span>
+        </div>
+        <div class="rule dark"></div>
+        <div class="line"><span>Coût total employeur (avant crédit)</span><span class="val" id="outCoutBrutTotal">–</span></div>
+        <div class="line bold"><span>Coût réel après crédit d'impôt</span><span class="val" id="outCoutReelTotal">–</span></div>
+        <div class="line"><span>Coût réel moyen / mois</span><span class="val" id="outCoutReelMoisMoyen">–</span></div>
+        <div class="line"><span>Coût réel / heure de garde</span><span class="val" id="outCoutHoraire">–</span></div>
+      </div>
+
+      <p class="note">
+        Le crédit d'impôt est en principe versé l'année suivant la dépense (avance de 60% en janvier). Ce simulateur donne un ordre de grandeur basé sur le calendrier et le barème URSSAF CESU en vigueur, pas une valeur contractuelle.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---- Constantes ----
+  var TAUX_SALARIAL = 0.2188025;
+  var TAUX_SALARIAL_ALSACE_MOSELLE = 0.2318025;
+  var TAUX_PATRONAL_BASE = 0.44696;
+  var TAUX_PATRONAL_MAX = 0.47396;
+  var PLAFOND_SANTE_TRAVAIL = 5;
+  var ABATTEMENT_HORAIRE = 2;
+
+  // Jours fériés légaux France métropolitaine 2026 et 2027 (YYYY-MM-DD)
+  var FERIES = new Set([
+    '2026-01-01','2026-04-06','2026-05-01','2026-05-08','2026-05-14','2026-05-25',
+    '2026-07-14','2026-08-15','2026-11-01','2026-11-11','2026-12-25',
+    '2027-01-01','2027-03-29','2027-05-01','2027-05-06','2027-05-08','2027-05-17',
+    '2027-07-14','2027-08-15','2027-11-01','2027-11-11','2027-12-25'
+  ]);
+
+  var MOIS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+  // Vacances scolaires 2026-2027 (communes aux 3 zones), bornes [début, fin[ (fin = reprise des cours, exclue)
+  var VACANCES_COMMUNES = [
+    ['2026-07-04','2026-09-01'], // fin année scolaire 2025-2026
+    ['2026-10-17','2026-11-02'], // Toussaint
+    ['2026-12-19','2027-01-04'], // Noël
+    ['2027-07-03','2027-08-31'], // été 2027 (rentrée 2027 non publiée, estimation fin août)
+  ];
+  var VACANCES_ZONE = {
+    A: [['2027-02-13','2027-03-01'], ['2027-04-10','2027-04-26']],
+    B: [['2027-02-20','2027-03-08'], ['2027-04-17','2027-05-03']],
+    C: [['2027-02-06','2027-02-22'], ['2027-04-03','2027-04-19']],
+  };
+  function isVacances(iso, zone){
+    var ranges = VACANCES_COMMUNES.concat(VACANCES_ZONE[zone] || []);
+    for (var i=0;i<ranges.length;i++){
+      if (iso >= ranges[i][0] && iso < ranges[i][1]) return true;
+    }
+    return false;
+  }
+
+  function euro(n){
+    return n.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €';
+  }
+  function num(id){ return parseFloat(document.getElementById(id).value) || 0; }
+  function chk(id){ return document.getElementById(id).checked; }
+  function isoDate(d){
+    var y = d.getFullYear();
+    var m = String(d.getMonth()+1).padStart(2,'0');
+    var day = String(d.getDate()).padStart(2,'0');
+    return y + '-' + m + '-' + day;
+  }
+  function monLundi0(d){ return (d.getDay()+6)%7; } // lundi=0 ... dimanche=6
+
+  function chargesFromNet(salaireNetMensuel, totalHeures, tauxSalarial){
+    var brutMensuel = salaireNetMensuel / (1 - tauxSalarial);
+    var cotisSalariales = brutMensuel - salaireNetMensuel;
+    var patronalAvant = Math.min(TAUX_PATRONAL_BASE*brutMensuel + PLAFOND_SANTE_TRAVAIL, TAUX_PATRONAL_MAX*brutMensuel);
+    var abattement = ABATTEMENT_HORAIRE * totalHeures;
+    var patronalDu = Math.max(0, patronalAvant - abattement);
+    return { brutMensuel: brutMensuel, cotisSalariales: cotisSalariales, patronalDu: patronalDu, coutTotal: brutMensuel + patronalDu };
+  }
+
+  var STORAGE_KEY = 'simulateur-garde-enfant-v1';
+  var FIELD_IDS = ['dateDebut','dateFin','h0','h1','h2','h3','h4','h5','h6','t0','t1','t2','t3','t4','t5','t6',
+    'tFerie','travailleFeries','cpInclus','alsaceMoselle','enfants','premiereAnnee','applyVacances','zoneScolaire'];
+
+  function saveState(){
+    var state = {};
+    FIELD_IDS.forEach(function(id){
+      var el = document.getElementById(id);
+      if (!el) return;
+      state[id] = (el.type === 'checkbox') ? el.checked : el.value;
+    });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+  }
+
+  function loadState(){
+    var raw;
+    try { raw = localStorage.getItem(STORAGE_KEY); } catch(e) { return; }
+    if (!raw) return;
+    var state;
+    try { state = JSON.parse(raw); } catch(e) { return; }
+    FIELD_IDS.forEach(function(id){
+      var el = document.getElementById(id);
+      if (!el || !(id in state)) return;
+      if (el.type === 'checkbox') el.checked = state[id];
+      else el.value = state[id];
+    });
+  }
+
+  function resetState(){
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+    location.reload();
+  }
+
+  function render(){
+    saveState();
+    var heuresJour = [num('h0'),num('h1'),num('h2'),num('h3'),num('h4'),num('h5'),num('h6')];
+    var tauxJour = [num('t0'),num('t1'),num('t2'),num('t3'),num('t4'),num('t5'),num('t6')];
+    var tauxFerie = num('tFerie');
+    var travailleFeries = chk('travailleFeries');
+    var cpInclus = chk('cpInclus');
+    var alsaceMoselle = chk('alsaceMoselle');
+    var enfants = num('enfants');
+    var premiereAnnee = chk('premiereAnnee');
+    var applyVacances = chk('applyVacances');
+    var zoneScolaire = document.getElementById('zoneScolaire').value;
+    var tauxSalarial = alsaceMoselle ? TAUX_SALARIAL_ALSACE_MOSELLE : TAUX_SALARIAL;
+
+    var dStart = new Date(document.getElementById('dateDebut').value + 'T00:00:00');
+    var dEnd = new Date(document.getElementById('dateFin').value + 'T00:00:00');
+
+    var monthBuckets = {}; // "YYYY-MM" -> {heures, netBase}
+    var monthOrder = [];
+
+    if (!isNaN(dStart) && !isNaN(dEnd) && dEnd >= dStart) {
+      var cur = new Date(dStart);
+      while (cur <= dEnd) {
+        var iso = isoDate(cur);
+        var dow = monLundi0(cur);
+        var estFerie = FERIES.has(iso);
+        var estVacances = applyVacances && isVacances(iso, zoneScolaire);
+        var heures, taux;
+        if (estFerie) {
+          if (travailleFeries) { heures = heuresJour[dow]; taux = tauxFerie; }
+          else { heures = 0; taux = 0; }
+        } else if (estVacances) {
+          heures = 0; taux = 0;
+        } else {
+          heures = heuresJour[dow]; taux = tauxJour[dow];
+        }
+        var montant = heures * taux;
+        var key = iso.slice(0,7);
+        if (!monthBuckets[key]) { monthBuckets[key] = {heures:0, netBase:0}; monthOrder.push(key); }
+        monthBuckets[key].heures += heures;
+        monthBuckets[key].netBase += montant;
+        cur.setDate(cur.getDate() + 1);
+      }
+    }
+
+    // Apply CP majoration, then charges, per month
+    var monthsBody = document.getElementById('monthsBody');
+    monthsBody.innerHTML = '';
+    var totHeures = 0, totNet = 0, totCharges = 0, totCout = 0;
+    var yearTotals = {}; // year -> coutTotal
+    var yearOrder = [];
+
+    monthOrder.forEach(function(key){
+      var b = monthBuckets[key];
+      var netMensuel = b.netBase * (cpInclus ? 1 : 1.1);
+      var ch = chargesFromNet(netMensuel, b.heures, tauxSalarial);
+      var chargesTotales = ch.cotisSalariales + ch.patronalDu;
+      var year = key.slice(0,4);
+      if (yearTotals[year] === undefined) { yearTotals[year] = 0; yearOrder.push(year); }
+      yearTotals[year] += ch.coutTotal;
+
+      totHeures += b.heures; totNet += netMensuel; totCharges += chargesTotales; totCout += ch.coutTotal;
+
+      var parts = key.split('-');
+      var label = MOIS_FR[parseInt(parts[1],10)-1] + ' ' + parts[0];
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>'+label+'</td><td>'+b.heures.toFixed(1)+' h</td><td>'+euro(netMensuel)+'</td><td>'+euro(chargesTotales)+'</td><td>'+euro(ch.coutTotal)+'</td>';
+      monthsBody.appendChild(tr);
+    });
+
+    document.getElementById('totHeures').textContent = totHeures.toFixed(1) + ' h';
+    document.getElementById('totNet').textContent = euro(totNet);
+    document.getElementById('totCharges').textContent = euro(totCharges);
+    document.getElementById('totCout').textContent = euro(totCout);
+
+    // Crédit d'impôt par année civile
+    yearOrder.sort();
+    var yearsBlock = document.getElementById('yearsBlock');
+    yearsBlock.innerHTML = '';
+    var creditTotal = 0;
+    yearOrder.forEach(function(year, idx){
+      var coutAnnee = yearTotals[year];
+      var plafondBase = 12000 + Math.min(enfants,3)*1500 + (premiereAnnee && idx===0 ? 1500 : 0);
+      var plafond = Math.min(plafondBase, 15000 + (premiereAnnee && idx===0 ? 1500 : 0));
+      var assiette = Math.min(coutAnnee, plafond);
+      var credit = assiette * 0.5;
+      creditTotal += credit;
+
+      var div = document.createElement('div');
+      div.className = 'year-block';
+      div.innerHTML =
+        '<div class="year-label">'+year+'</div>' +
+        '<div class="line"><span>Dépense engagée</span><span class="val">'+euro(coutAnnee)+'</span></div>' +
+        '<div class="line muted"><span>Plafond applicable</span><span class="val">'+euro(plafond)+'</span></div>' +
+        '<div class="line bold"><span>Crédit d\'impôt (50%)</span><span class="val">'+euro(credit)+'</span></div>';
+      yearsBlock.appendChild(div);
+    });
+    if (yearOrder.length === 0) {
+      yearsBlock.innerHTML = '<p class="note">Renseignez une période de contrat valide.</p>';
+    }
+
+    var coutReelTotal = totCout - creditTotal;
+    var nbMois = monthOrder.length || 1;
+    var coutReelMoisMoyen = coutReelTotal / nbMois;
+    var coutHoraire = totHeures > 0 ? coutReelTotal / totHeures : 0;
+
+    document.getElementById('outCreditTotal').textContent = euro(creditTotal);
+    document.getElementById('outCoutBrutTotal').textContent = euro(totCout);
+    document.getElementById('outCoutReelTotal').textContent = euro(coutReelTotal);
+    document.getElementById('outCoutReelMoisMoyen').textContent = euro(coutReelMoisMoyen);
+    document.getElementById('outCoutHoraire').textContent = euro(coutHoraire);
+  }
+
+  document.querySelectorAll('input').forEach(function(el){
+    el.addEventListener('input', render);
+  });
+  document.querySelectorAll('select').forEach(function(el){
+    el.addEventListener('change', render);
+  });
+  loadState();
+  render();
+</script>
+</body>
+</html>
